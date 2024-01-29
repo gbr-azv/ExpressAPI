@@ -17,10 +17,4 @@ module.exports = (app) => {
         controller.userData
     );
 
-    app.get(
-        "/admin",
-        [authJwt.verifyToken, authJwt.isAdmin],
-        controller.adminAcess
-    );
-
 };
