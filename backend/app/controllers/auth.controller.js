@@ -32,7 +32,7 @@ exports.signup = (req, res) => {
           }
         }).then(roles => {
           user.setRoles(roles).then(() => {
-            res.send({
+            res.status(201).send({
               "ID": user_id,
               "E-mail": email,
               "Created At": createdAt
@@ -42,7 +42,7 @@ exports.signup = (req, res) => {
       } else {
         // user role = 1
         user.setRoles([1]).then(() => {
-          res.send({
+          res.status(201).send({
             "ID": user_id,
             "E-mail": email,
             "Created At": createdAt
@@ -51,6 +51,7 @@ exports.signup = (req, res) => {
       }
     })
     .catch(err => {
+      console.error(`Error creating user: ${err}`);
       res.status(500).send({ message: err.message });
     });
 };
@@ -82,6 +83,7 @@ exports.signin = (req, res) => {
       });
     })
     .catch(err => {
+      console.error(`Error logging into the system: ${err}`);
       res.status(500).send({ message: err.message });
     });
 };
