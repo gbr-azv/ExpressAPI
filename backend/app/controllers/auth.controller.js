@@ -1,17 +1,16 @@
 const db = require("../models/index");
-const config = require("../config/auth.config");
-const validate = require("../utils/verify.body.req");
+const { authJwt } = require("../middleware");
 const User = db.user;
 const Role = db.role;
-
 const Op = db.Sequelize.Op;
 
-var jwt = require("jsonwebtoken");
-var bcrypt = require("bcryptjs");
+const bcrypt = require("bcryptjs");
+const parse = require("../utils/verify.body.req");
+const validate = require("../utils/pwd");
 
 exports.signup = (req, res) => {
 
-  validate.verifyBodyReq(req, res);
+  parse.verifyBodyReq(req, res);
 
   User.create({
     name: req.body.name,
@@ -67,30 +66,9 @@ exports.signin = (req, res) => {
         return res.status(404).send({ message: "Invalid Credentials ;(" });
       }
 
-      let passwordIsValid = bcrypt.compareSync(
-        req.body.password,
-        user.password
-      );
+      validate.passwordIsValid(req, res, user);
 
-      if (!passwordIsValid) {
-        return res.status(401).send({
-          accessToken: null,
-          message: "Invalid Password!"
-        });
-      }
-
-      const payload = {
-        id: user.dataValues.user_id,
-        email: user.dataValues.email
-      };
-
-      const token = jwt.sign(payload,
-        config.secret,
-        {
-          algorithm: 'HS256',
-          allowInsecureKeySizes: true,
-          expiresIn: 1800, // 30 minutes
-        });
+      const token = authJwt.createToken(user);
 
       let authorities = [];
       user.getRoles().then(roles => {

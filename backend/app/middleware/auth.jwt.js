@@ -3,6 +3,23 @@ const config = require("../config/auth.config.js");
 const db = require("../models/index.js");
 const User = db.user;
 
+createToken = (user) => {
+  const payload = {
+    id: user.dataValues.user_id,
+    email: user.dataValues.email
+  };
+
+  const token = jwt.sign(payload,
+    config.secret,
+    {
+      algorithm: 'HS256',
+      allowInsecureKeySizes: true,
+      expiresIn: 1800, // 30 minutes
+    });
+  
+  return token;
+};
+
 verifyToken = (req, res, next) => {
   let token = req.headers["x-access-token"];
 
@@ -46,6 +63,7 @@ isAdmin = (req, res, next) => {
 
 const authJwt = {
   verifyToken: verifyToken,
-  isAdmin: isAdmin
+  isAdmin: isAdmin,
+  createToken: createToken
 };
 module.exports = authJwt;
