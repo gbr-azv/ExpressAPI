@@ -12,4 +12,5 @@ exports.passwordIsValid = (req, res, user) => {
             message: "Invalid Password!"
         });
     }
+    return;
 };

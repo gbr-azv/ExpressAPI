@@ -10,7 +10,7 @@ const validate = require("../utils/pwd");
 
 exports.signup = (req, res) => {
 
-  parse.verifyBodyReq(req, res);
+  parse.verifySignUpReq(req, res);
 
   User.create({
     name: req.body.name,
@@ -32,7 +32,7 @@ exports.signup = (req, res) => {
           }
         }).then(roles => {
           user.setRoles(roles).then(() => {
-            res.status(201).send({
+            return res.status(201).send({
               "ID": user_id,
               "E-mail": email,
               "Created At": createdAt
@@ -42,7 +42,7 @@ exports.signup = (req, res) => {
       } else {
         // user role = 1
         user.setRoles([1]).then(() => {
-          res.status(201).send({
+          return res.status(201).send({
             "ID": user_id,
             "E-mail": email,
             "Created At": createdAt
@@ -52,7 +52,7 @@ exports.signup = (req, res) => {
     })
     .catch(err => {
       console.error(`Error creating user: ${err}`);
-      res.status(500).send({ message: err.message });
+      return res.status(500).send({ message: err.message });
     });
 };
 
@@ -64,7 +64,9 @@ exports.signin = (req, res) => {
   })
     .then(user => {
       if (!user) {
-        return res.status(404).send({ message: "Invalid Credentials ;(" });
+        return res.status(404).send({
+          message: "Invalid Credentials ;("
+        });
       }
 
       validate.passwordIsValid(req, res, user);
@@ -76,7 +78,7 @@ exports.signin = (req, res) => {
         for (let i = 0; i < roles.length; i++) {
           authorities.push("ROLE_" + roles[i].name.toUpperCase());
         }
-        res.status(200).send({
+        return res.status(200).send({
           roles: authorities,
           accessToken: token
         });
@@ -84,6 +86,51 @@ exports.signin = (req, res) => {
     })
     .catch(err => {
       console.error(`Error logging into the system: ${err}`);
-      res.status(500).send({ message: err.message });
+      return res.status(500).send({ message: err.message });
+    });
+};
+
+exports.changePwd = (req, res) => {
+
+  const id = req.userId;
+  parse.verifyPwdReq(req, res);
+
+  User.findByPk(id)
+    .then(user => {
+      if (user) {
+        validate.passwordIsValid(req, res, user);
+
+        if (req.body.newPwd == req.body.repeatNewPwd) {
+          let newPwd = bcrypt.hashSync(req.body.newPwd, 8);
+          User.update({ password: newPwd }, {
+            where: { user_id: id }
+          })
+            .then(() => {
+              return res.status(200).send({
+                message: `Password updated succesfully.`
+              });
+            })
+            .catch(err => {
+              console.error(`Error updating password: ${err}`);
+              return res.status(304).send({
+                message: `Error updating password`
+              });
+            })
+        } else {
+          return res.status(400).send({
+            message: `Error - Both passwords must be the same.`
+          });
+        }
+      } else {
+        return res.status(404).send({
+          message: `Cannot find user with id: ${id}.`
+        });
+      }
+    })
+    .catch(err => {
+      console.error(`Error finding user: ${err}`);
+      return res.status(500).send({
+        message: `Error finding user with id: ${id}.`
+      });
     });
 };

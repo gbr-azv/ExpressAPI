@@ -16,7 +16,7 @@ module.exports = (app) => {
         "/user",
         [authJwt.verifyToken],
         controller.deleteUser
-    );  
+    );
 
     app.put(
         "/user",
